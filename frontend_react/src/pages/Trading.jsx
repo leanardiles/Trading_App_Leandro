@@ -29,6 +29,15 @@ import { tradingAPI, portfolioAPI, holdingAPI } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import { formatCurrency } from '../utils/format'
 import { toast } from 'react-toastify'
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
+} from 'recharts'
 
 function TabPanel({ children, value, index }) {
   return (
@@ -53,6 +62,11 @@ export default function Trading() {
     price: '',
   })
 
+  // Add these new state variables
+  const [stockInfo, setStockInfo] = useState(null)
+  const [fetchingPrice, setFetchingPrice] = useState(false)
+  const [chartPeriod, setChartPeriod] = useState('1M')
+
   // Sell form data
   const [sellData, setSellData] = useState({
     stock: '',
@@ -74,6 +88,33 @@ export default function Trading() {
       setHoldings(holdingsRes.data.results || holdingsRes.data)
     } catch (err) {
       console.error('Failed to load data:', err)
+    }
+  }
+
+  const fetchStockPrice = async () => {
+    if (!buyData.stock) {
+      toast.error('Please enter a stock symbol')
+      return
+    }
+
+    setFetchingPrice(true)
+    try {
+      const response = await tradingAPI.getStockPrice({
+        stock: buyData.stock.toUpperCase()
+      })
+      
+      setStockInfo(response.data)
+      setBuyData({ 
+        ...buyData, 
+        price: response.data.current_price.toString() 
+      })
+      toast.success(`Fetched price for ${response.data.name}`)
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || 'Failed to fetch stock price'
+      toast.error(errorMsg)
+      setStockInfo(null)
+    } finally {
+      setFetchingPrice(false)
     }
   }
 
@@ -244,13 +285,83 @@ export default function Trading() {
                       fullWidth
                       label="Stock Symbol"
                       value={buyData.stock}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setBuyData({ ...buyData, stock: e.target.value })
-                      }
+                        setStockInfo(null) // Clear previous stock info when changing symbol
+                      }}
                       margin="normal"
                       placeholder="e.g., AAPL"
                       inputProps={{ style: { textTransform: 'uppercase' } }}
                     />
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      onClick={fetchStockPrice}
+                      disabled={fetchingPrice || !buyData.stock}
+                      sx={{ mt: 2 }}
+                    >
+                      {fetchingPrice ? <CircularProgress size={24} /> : 'Get Current Price'}
+                    </Button>
+
+                    {stockInfo && (
+                      <Box sx={{ mt: 2 }}>
+                        <Alert severity="success">
+                          <strong>{stockInfo.name}</strong><br />
+                          Current Price: {formatCurrency(stockInfo.current_price)}
+                        </Alert>
+                        
+                        {/* Chart Period Buttons */}
+                        <Box sx={{ mt: 2, mb: 1, display: 'flex', gap: 1, justifyContent: 'center' }}>
+                          {['1D', '1W', '1M', '3M', '1Y', '5Y'].map((period) => (
+                            <Button
+                              key={period}
+                              variant={chartPeriod === period ? 'contained' : 'outlined'}
+                              size="small"
+                              onClick={() => setChartPeriod(period)}
+                            >
+                              {period}
+                            </Button>
+                          ))}
+                        </Box>
+                        
+                        {/* Stock Price Chart */}
+                        {stockInfo.historical_data && stockInfo.historical_data[chartPeriod] && (
+                          <Box sx={{ mt: 2, height: 300 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <LineChart data={stockInfo.historical_data[chartPeriod]}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis 
+                                  dataKey="date" 
+                                  tick={{ fontSize: 10 }}
+                                  tickFormatter={(date) => {
+                                    const d = new Date(date)
+                                    return chartPeriod === '1D' ? d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                                  }}
+                                />
+                                <YAxis 
+                                  domain={['auto', 'auto']}
+                                  tick={{ fontSize: 12 }}
+                                  tickFormatter={(value) => `$${value.toFixed(2)}`}
+                                />
+                                <Tooltip 
+                                  formatter={(value) => [`$${value.toFixed(2)}`, 'Price']}
+                                  labelFormatter={(date) => new Date(date).toLocaleString()}
+                                />
+                                <Line 
+                                  type="monotone" 
+                                  dataKey="price" 
+                                  stroke="#1976d2" 
+                                  strokeWidth={2}
+                                  dot={false}
+                                />
+                              </LineChart>
+                            </ResponsiveContainer>
+                          </Box>
+                        )}
+                      </Box>
+                    )}
+
+
                     <TextField
                       fullWidth
                       label="Quantity"
@@ -261,17 +372,7 @@ export default function Trading() {
                       }
                       margin="normal"
                       inputProps={{ min: 1 }}
-                    />
-                    <TextField
-                      fullWidth
-                      label="Price per Share"
-                      type="number"
-                      value={buyData.price}
-                      onChange={(e) =>
-                        setBuyData({ ...buyData, price: e.target.value })
-                      }
-                      margin="normal"
-                      inputProps={{ min: 0.01, step: 0.01 }}
+                      disabled={!stockInfo}
                     />
                     {buyData.quantity && buyData.price && (
                       <Alert severity="info" sx={{ mt: 2 }}>

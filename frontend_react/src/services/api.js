@@ -99,18 +99,23 @@ export const holdingAPI = {
   profitable: () => api.get('/holdings/profitable/'),
   losing: () => api.get('/holdings/losing/'),
   summary: () => api.get('/holdings/summary/'),
+  refreshPrices: () => api.post('/holdings/refresh_prices/'),
 }
 
 // Portfolio API
 export const portfolioAPI = {
   summary: () => api.get('/portfolio/summary/'),
   performance: () => api.get('/portfolio/performance/'),
+  saveSnapshot: () => api.post('/portfolio-snapshots/save_snapshot/'),
+  getPortfolioHistory: (period) => api.get(`/portfolio-snapshots/portfolio_history/?period=${period}`),
+  getStockHistory: (stock, period) => api.get(`/portfolio-snapshots/stock_history/?stock=${stock}&period=${period}`),
 }
 
 // Trading API
 export const tradingAPI = {
   buy: (data) => api.post('/trading/buy/', data),
   sell: (data) => api.post('/trading/sell/', data),
+  getStockPrice: (data) => api.post('/trading/get_stock_price/', data),
 }
 
 // ML Strategy API

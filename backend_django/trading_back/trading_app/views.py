@@ -6,6 +6,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import authenticate
 from django.db.models import Sum, Count
 from decimal import Decimal, ROUND_HALF_UP
+import yfinance as yf
 from .models import User, Transaction, Holding
 from .serializers import (
     UserSerializer, UserRegistrationSerializer, UserLoginSerializer,
@@ -248,6 +249,48 @@ class HoldingViewSet(viewsets.ModelViewSet):
             'total_profit_loss_percentage': total_profit_loss_percentage,
             'holdings_count': queryset.count()
         })
+    
+    @action(detail=False, methods=['post'])
+    def refresh_prices(self, request):
+        """
+        Refresh current prices for all user holdings
+        POST /api/holdings/refresh_prices/
+        """
+        import yfinance as yf
+        
+        user = request.user
+        holdings = Holding.objects.filter(user=user)
+        
+        if not holdings.exists():
+            return Response({
+                'message': 'No holdings to refresh'
+            }, status=status.HTTP_200_OK)
+        
+        updated_count = 0
+        errors = []
+        
+        for holding in holdings:
+            try:
+                # Fetch current price from yfinance
+                stock = yf.Ticker(holding.stock)
+                info = stock.info
+                current_price = info.get('currentPrice') or info.get('regularMarketPrice')
+                
+                if current_price:
+                    holding.current_price = Decimal(str(current_price))
+                    holding.save()
+                    updated_count += 1
+                else:
+                    errors.append(f"Could not fetch price for {holding.stock}")
+            except Exception as e:
+                errors.append(f"Error updating {holding.stock}: {str(e)}")
+        
+        return Response({
+            'message': f'Updated {updated_count} holdings',
+            'updated_count': updated_count,
+            'total_holdings': holdings.count(),
+            'errors': errors if errors else None
+        }, status=status.HTTP_200_OK)
 
 
 class PortfolioViewSet(viewsets.ViewSet):
@@ -379,7 +422,7 @@ class TradingViewSet(viewsets.ViewSet):
     ViewSet for integrated trading operations (buy/sell)
     """
     permission_classes = [IsAuthenticated]
-    
+
     @action(detail=False, methods=['post'])
     def buy(self, request):
         """
@@ -537,4 +580,230 @@ class TradingViewSet(viewsets.ViewSet):
             'holding_id': holding_id,
             'new_balance': float(user.balance),
             'total_proceeds': float(total_proceeds)
+        }, status=status.HTTP_200_OK)
+    
+    
+    @action(detail=False, methods=['post'])
+    def get_stock_price(self, request):
+        """
+        Get real-time stock price and historical data using yfinance
+        POST /api/trading/get_stock_price/
+        Body: {
+            "stock": "AAPL"
+        }
+        """
+        stock_symbol = request.data.get('stock', '').upper().strip()
+        
+        if not stock_symbol:
+            return Response(
+                {'error': 'Stock symbol is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Fetch stock data from yfinance
+            stock = yf.Ticker(stock_symbol)
+            info = stock.info
+            
+            # Get current price
+            current_price = info.get('currentPrice') or info.get('regularMarketPrice')
+            
+            if not current_price:
+                return Response(
+                    {'error': f'Could not fetch price for {stock_symbol}'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Fetch historical data for different periods
+            historical_data = {}
+            periods = {
+                '1D': '1d',
+                '1W': '5d',
+                '1M': '1mo',
+                '3M': '3mo',
+                '1Y': '1y',
+                '5Y': '5y'
+            }
+            
+            for label, period in periods.items():
+                try:
+                    hist = stock.history(period=period)
+                    if not hist.empty:
+                        # Convert to list of {date, price} objects
+                        historical_data[label] = [
+                            {
+                                'date': index.strftime('%Y-%m-%d %H:%M:%S'),
+                                'price': float(row['Close'])
+                            }
+                            for index, row in hist.iterrows()
+                        ]
+                except Exception as e:
+                    print(f"Error fetching {label} data: {str(e)}")
+                    historical_data[label] = []
+            
+            return Response({
+                'symbol': stock_symbol,
+                'name': info.get('longName', stock_symbol),
+                'current_price': float(current_price),
+                'currency': info.get('currency', 'USD'),
+                'historical_data': historical_data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Error fetching stock data: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+class PortfolioSnapshotViewSet(viewsets.ViewSet):
+    """
+    ViewSet for portfolio performance tracking
+    """
+    permission_classes = [IsAuthenticated]
+    
+    @action(detail=False, methods=['post'])
+    def save_snapshot(self, request):
+        """
+        Save current portfolio snapshot
+        POST /api/portfolio-snapshots/save_snapshot/
+        """
+        from .models import PortfolioSnapshot, StockSnapshot
+        
+        user = request.user
+        holdings = Holding.objects.filter(user=user)
+        
+        # Calculate portfolio values
+        holdings_value = sum(h.current_value for h in holdings)
+        total_value = user.balance + holdings_value
+        
+        # Create portfolio snapshot
+        portfolio_snapshot = PortfolioSnapshot.objects.create(
+            user=user,
+            total_value=total_value,
+            cash_balance=user.balance,
+            holdings_value=holdings_value
+        )
+        
+        # Create stock snapshots for each holding
+        for holding in holdings:
+            StockSnapshot.objects.create(
+                user=user,
+                stock=holding.stock,
+                quantity=holding.quantity,
+                current_price=holding.current_price,
+                current_value=holding.current_value
+            )
+        
+        return Response({
+            'message': 'Snapshot saved successfully',
+            'snapshot_id': portfolio_snapshot.id,
+            'total_value': float(total_value),
+            'timestamp': portfolio_snapshot.timestamp
+        }, status=status.HTTP_201_CREATED)
+    
+    @action(detail=False, methods=['get'])
+    def portfolio_history(self, request):
+        """
+        Get portfolio performance history
+        GET /api/portfolio-snapshots/portfolio_history/?period=1M
+        """
+        from .models import PortfolioSnapshot
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        user = request.user
+        period = request.query_params.get('period', '1M')
+        
+        # Calculate date range based on period
+        now = timezone.now()
+        period_map = {
+            '1D': timedelta(days=1),
+            '1W': timedelta(days=7),
+            '1M': timedelta(days=30),
+            '3M': timedelta(days=90),
+            '1Y': timedelta(days=365),
+            '5Y': timedelta(days=1825),
+        }
+        
+        start_date = now - period_map.get(period, timedelta(days=30))
+        
+        # Get snapshots in date range
+        snapshots = PortfolioSnapshot.objects.filter(
+            user=user,
+            timestamp__gte=start_date
+        ).order_by('timestamp')
+        
+        # Format data for chart
+        data = [
+            {
+                'date': snapshot.timestamp.isoformat(),
+                'total_value': float(snapshot.total_value),
+                'cash_balance': float(snapshot.cash_balance),
+                'holdings_value': float(snapshot.holdings_value)
+            }
+            for snapshot in snapshots
+        ]
+        
+        return Response({
+            'period': period,
+            'data': data,
+            'count': len(data)
+        }, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=['get'])
+    def stock_history(self, request):
+        """
+        Get individual stock performance history
+        GET /api/portfolio-snapshots/stock_history/?stock=AAPL&period=1M
+        """
+        from .models import StockSnapshot
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        user = request.user
+        stock = request.query_params.get('stock')
+        period = request.query_params.get('period', '1M')
+        
+        if not stock:
+            return Response(
+                {'error': 'Stock symbol is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Calculate date range
+        now = timezone.now()
+        period_map = {
+            '1D': timedelta(days=1),
+            '1W': timedelta(days=7),
+            '1M': timedelta(days=30),
+            '3M': timedelta(days=90),
+            '1Y': timedelta(days=365),
+            '5Y': timedelta(days=1825),
+        }
+        
+        start_date = now - period_map.get(period, timedelta(days=30))
+        
+        # Get stock snapshots
+        snapshots = StockSnapshot.objects.filter(
+            user=user,
+            stock=stock.upper(),
+            timestamp__gte=start_date
+        ).order_by('timestamp')
+        
+        # Format data
+        data = [
+            {
+                'date': snapshot.timestamp.isoformat(),
+                'price': float(snapshot.current_price),
+                'value': float(snapshot.current_value),
+                'quantity': snapshot.quantity
+            }
+            for snapshot in snapshots
+        ]
+        
+        return Response({
+            'stock': stock.upper(),
+            'period': period,
+            'data': data,
+            'count': len(data)
         }, status=status.HTTP_200_OK)

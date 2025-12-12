@@ -208,3 +208,90 @@ class Holding(models.Model):
     
     def __str__(self):
         return f"{self.user.name} - {self.stock} ({self.quantity} shares)"
+
+class PortfolioSnapshot(models.Model):
+    """
+    Model to track portfolio value over time for performance charts
+    """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='portfolio_snapshots',
+        help_text="User whose portfolio is being tracked"
+    )
+    timestamp = models.DateTimeField(
+        auto_now_add=True,
+        help_text="When this snapshot was taken"
+    )
+    total_value = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        help_text="Total portfolio value at this time (cash + holdings)"
+    )
+    cash_balance = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        help_text="Cash balance at this time"
+    )
+    holdings_value = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        help_text="Total value of all holdings at this time"
+    )
+    
+    class Meta:
+        db_table = 'portfolio_snapshot'
+        verbose_name = 'Portfolio Snapshot'
+        verbose_name_plural = 'Portfolio Snapshots'
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['user', '-timestamp']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.name} - ${self.total_value} at {self.timestamp}"
+
+
+class StockSnapshot(models.Model):
+    """
+    Model to track individual stock performance over time
+    """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='stock_snapshots',
+        help_text="User who owns this stock"
+    )
+    stock = models.CharField(
+        max_length=10,
+        help_text="Stock symbol"
+    )
+    timestamp = models.DateTimeField(
+        auto_now_add=True,
+        help_text="When this snapshot was taken"
+    )
+    quantity = models.PositiveIntegerField(
+        help_text="Number of shares at this time"
+    )
+    current_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        help_text="Stock price at this time"
+    )
+    current_value = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        help_text="Total value (quantity × price)"
+    )
+    
+    class Meta:
+        db_table = 'stock_snapshot'
+        verbose_name = 'Stock Snapshot'
+        verbose_name_plural = 'Stock Snapshots'
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['user', 'stock', '-timestamp']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.name} - {self.stock} at {self.timestamp}"

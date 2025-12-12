@@ -14,7 +14,24 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  ToggleButton,
+  ToggleButtonGroup,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Button,
 } from '@mui/material'
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend
+} from 'recharts'
 import { portfolioAPI, holdingAPI } from '../services/api'
 import { formatCurrency, formatPercentage } from '../utils/format'
 
@@ -23,10 +40,25 @@ export default function Performance() {
   const [holdings, setHoldings] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  
+  // Chart states
+  const [viewMode, setViewMode] = useState('portfolio') // 'portfolio' or 'stock'
+  const [selectedStock, setSelectedStock] = useState('')
+  const [timePeriod, setTimePeriod] = useState('1M')
+  const [chartData, setChartData] = useState([])
+  const [loadingChart, setLoadingChart] = useState(false)
 
   useEffect(() => {
     loadPerformanceData()
   }, [])
+
+  useEffect(() => {
+    if (viewMode === 'portfolio') {
+      loadPortfolioChart()
+    } else if (selectedStock) {
+      loadStockChart()
+    }
+  }, [viewMode, selectedStock, timePeriod])
 
   const loadPerformanceData = async () => {
     try {
@@ -37,12 +69,63 @@ export default function Performance() {
       ])
 
       setPerformance(performanceRes.data)
-      setHoldings(holdingsRes.data.results || holdingsRes.data)
+      const holdingsList = holdingsRes.data.results || holdingsRes.data
+      setHoldings(holdingsList)
+      
+      // Set first stock as default selection
+      if (holdingsList.length > 0 && !selectedStock) {
+        setSelectedStock(holdingsList[0].stock)
+      }
     } catch (err) {
       setError('Failed to load performance data')
       console.error(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadPortfolioChart = async () => {
+    setLoadingChart(true)
+    try {
+      const response = await portfolioAPI.getPortfolioHistory(timePeriod)
+      const data = response.data.data.map(item => ({
+        date: new Date(item.date).toLocaleString('en-US', { 
+          month: 'short', 
+          day: 'numeric',
+          hour: timePeriod === '1D' ? '2-digit' : undefined,
+          minute: timePeriod === '1D' ? '2-digit' : undefined
+        }),
+        value: item.total_value
+      }))
+      setChartData(data)
+    } catch (err) {
+      console.error('Failed to load portfolio chart:', err)
+      setChartData([])
+    } finally {
+      setLoadingChart(false)
+    }
+  }
+
+  const loadStockChart = async () => {
+    setLoadingChart(true)
+    try {
+      const response = await portfolioAPI.getStockHistory(selectedStock, timePeriod)
+      const data = response.data.data.map(item => ({
+        date: new Date(item.date).toLocaleString('en-US', { 
+          month: 'short', 
+          day: 'numeric',
+          hour: timePeriod === '1D' ? '2-digit' : undefined,
+          minute: timePeriod === '1D' ? '2-digit' : undefined
+        }),
+        value: item.value,
+        price: item.price
+      }))
+      setChartData(data)
+    } catch (err) {
+      console.error('Failed to load stock chart:', err)
+      setChartData([])
+    } finally {
+      setLoadingChart(false)
     }
   }
 
@@ -68,6 +151,98 @@ export default function Performance() {
         Portfolio Performance
       </Typography>
 
+      {/* Performance Chart */}
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <Typography variant="h6">Performance Over Time</Typography>
+          
+          <Box display="flex" gap={2} alignItems="center">
+            {/* View Mode Toggle */}
+            <ToggleButtonGroup
+              value={viewMode}
+              exclusive
+              onChange={(e, newMode) => newMode && setViewMode(newMode)}
+              size="small"
+            >
+              <ToggleButton value="portfolio">Complete Portfolio</ToggleButton>
+              <ToggleButton value="stock">Individual Stock</ToggleButton>
+            </ToggleButtonGroup>
+
+            {/* Stock Selector */}
+            {viewMode === 'stock' && (
+              <FormControl size="small" sx={{ minWidth: 150 }}>
+                <InputLabel>Select Stock</InputLabel>
+                <Select
+                  value={selectedStock}
+                  label="Select Stock"
+                  onChange={(e) => setSelectedStock(e.target.value)}
+                >
+                  {holdings.map((holding) => (
+                    <MenuItem key={holding.id} value={holding.stock}>
+                      {holding.stock}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          </Box>
+        </Box>
+
+        {/* Time Period Tabs */}
+        <Box display="flex" gap={1} mb={3} justifyContent="center">
+          {['1D', '1W', '1M', '3M', '1Y', '5Y'].map((period) => (
+            <Button
+              key={period}
+              variant={timePeriod === period ? 'contained' : 'outlined'}
+              size="small"
+              onClick={() => setTimePeriod(period)}
+            >
+              {period}
+            </Button>
+          ))}
+        </Box>
+
+        {/* Chart */}
+        {loadingChart ? (
+          <Box display="flex" justifyContent="center" p={4}>
+            <CircularProgress />
+          </Box>
+        ) : chartData.length > 0 ? (
+          <Box sx={{ height: 400 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="date" 
+                  tick={{ fontSize: 10 }}
+                />
+                <YAxis 
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(value) => `$${value.toFixed(2)}`}
+                />
+                <Tooltip 
+                  formatter={(value) => [`$${value.toFixed(2)}`, viewMode === 'portfolio' ? 'Portfolio Value' : 'Stock Value']}
+                />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke="#1976d2" 
+                  strokeWidth={2}
+                  dot={false}
+                  name={viewMode === 'portfolio' ? 'Portfolio Value' : `${selectedStock} Value`}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </Box>
+        ) : (
+          <Alert severity="info">
+            No performance data available yet. Data will accumulate as prices update every 30 seconds.
+          </Alert>
+        )}
+      </Paper>
+
+      {/* Existing Performance Cards */}
       {performance && (
         <Grid container spacing={3} sx={{ mt: 1 }}>
           <Grid item xs={12} md={4}>
@@ -130,6 +305,7 @@ export default function Performance() {
         </Grid>
       )}
 
+      {/* Holdings Performance Table */}
       <Paper sx={{ mt: 3, p: 3 }}>
         <Typography variant="h6" gutterBottom>
           Holdings Performance Ranking
@@ -214,37 +390,6 @@ export default function Performance() {
           </Table>
         </TableContainer>
       </Paper>
-
-      {performance?.all_performances && performance.all_performances.length > 0 && (
-        <Paper sx={{ mt: 3, p: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            All Stock Performances
-          </Typography>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            {performance.all_performances.map((perf, index) => (
-              <Grid item xs={12} sm={6} md={4} key={index}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="subtitle1" fontWeight="bold">
-                      {perf.stock}
-                    </Typography>
-                    <Typography
-                      variant="h6"
-                      color={perf.profit_loss_percentage >= 0 ? 'success.main' : 'error.main'}
-                    >
-                      {formatPercentage(perf.profit_loss_percentage)}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      {formatCurrency(perf.profit_loss)}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </Paper>
-      )}
     </Box>
   )
 }
-

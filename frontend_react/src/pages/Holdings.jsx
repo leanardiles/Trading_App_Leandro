@@ -23,7 +23,7 @@ import {
   Chip,
 } from '@mui/material'
 import { Add } from '@mui/icons-material'
-import { holdingAPI } from '../services/api'
+import { holdingAPI, portfolioAPI } from '../services/api'
 import { formatCurrency, formatPercentage } from '../utils/format'
 import { toast } from 'react-toastify'
 
@@ -31,6 +31,7 @@ export default function Holdings() {
   const [holdings, setHoldings] = useState([])
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
   const [openDialog, setOpenDialog] = useState(false)
   const [formData, setFormData] = useState({
@@ -39,10 +40,26 @@ export default function Holdings() {
     buying_price: '',
     current_price: '',
   })
-
+ 
   useEffect(() => {
     loadHoldings()
-  }, [])
+    
+    // Auto-refresh prices every 30 seconds and save snapshot
+    const interval = setInterval(async () => {
+      if (holdings.length > 0) {
+        try {
+          await holdingAPI.refreshPrices()
+          await portfolioAPI.saveSnapshot()  // Save snapshot after refreshing prices
+          await loadHoldings()
+        } catch (err) {
+          console.error('Auto-refresh failed:', err)
+        }
+      }
+    }, 30000) // 30 seconds
+  
+    // Cleanup interval on unmount
+    return () => clearInterval(interval)
+  }, [holdings.length])
 
   const loadHoldings = async () => {
     try {
@@ -61,6 +78,22 @@ export default function Holdings() {
       setLoading(false)
     }
   }
+
+  const refreshPrices = async () => {
+    setRefreshing(true)
+    try {
+      const response = await holdingAPI.refreshPrices()
+      toast.success(response.data.message)
+      // Reload holdings to show updated prices
+      await loadHoldings()
+    } catch (err) {
+      toast.error('Failed to refresh prices')
+      console.error(err)
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
 
   const handleSubmit = async () => {
     try {
