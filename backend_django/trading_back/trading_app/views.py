@@ -7,11 +7,12 @@ from django.contrib.auth import authenticate
 from django.db.models import Sum, Count
 from decimal import Decimal, ROUND_HALF_UP
 import yfinance as yf
-from .models import User, Transaction, Holding
+from .models import User, Transaction, Holding, Signal
 from .serializers import (
     UserSerializer, UserRegistrationSerializer, UserLoginSerializer,
     TransactionSerializer, TransactionCreateSerializer,
-    HoldingSerializer, HoldingCreateSerializer, PortfolioSummarySerializer
+    HoldingSerializer, HoldingCreateSerializer, PortfolioSummarySerializer,
+    SignalSerializer
 )
 
 
@@ -835,3 +836,56 @@ class PortfolioSnapshotViewSet(viewsets.ViewSet):
             'data': data,
             'count': len(data)
         }, status=status.HTTP_200_OK)
+    
+
+class SignalViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for trading signals
+    """
+    serializer_class = SignalSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        """Only return signals for the current user"""
+        return Signal.objects.filter(user=self.request.user)
+    
+    @action(detail=False, methods=['get'])
+    def unread_count(self, request):
+        """
+        Get count of unread signals
+        GET /api/signals/unread_count/
+        """
+        count = Signal.objects.filter(user=request.user, is_read=False, is_active=True).count()
+        return Response({'unread_count': count})
+    
+    @action(detail=True, methods=['post'])
+    def mark_read(self, request, pk=None):
+        """
+        Mark a signal as read
+        POST /api/signals/{id}/mark_read/
+        """
+        signal = self.get_object()
+        signal.is_read = True
+        signal.save()
+        return Response({'message': 'Signal marked as read'})
+    
+    @action(detail=True, methods=['post'])
+    def dismiss(self, request, pk=None):
+        """
+        Dismiss/deactivate a signal
+        POST /api/signals/{id}/dismiss/
+        """
+        signal = self.get_object()
+        signal.is_active = False
+        signal.save()
+        return Response({'message': 'Signal dismissed'})
+    
+    @action(detail=False, methods=['get'])
+    def active(self, request):
+        """
+        Get only active signals
+        GET /api/signals/active/
+        """
+        signals = Signal.objects.filter(user=request.user, is_active=True).order_by('-created_at')
+        serializer = self.get_serializer(signals, many=True)
+        return Response(serializer.data)

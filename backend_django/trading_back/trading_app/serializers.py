@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import User, Transaction, Holding
+from .models import User, Transaction, Holding, Signal
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -305,3 +305,16 @@ class PortfolioSummarySerializer(serializers.Serializer):
     realized_profit_loss = serializers.DecimalField(max_digits=15, decimal_places=2)
     holdings_count = serializers.IntegerField()
     transactions_count = serializers.IntegerField()
+
+class SignalSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Signal model
+    """
+    class Meta:
+        model = Signal
+        fields = [
+            'id', 'stock', 'signal_type', 'action', 'title', 
+            'description', 'index_name', 'current_price', 
+            'created_at', 'is_read', 'is_active'
+        ]
+        read_only_fields = ['id', 'created_at']

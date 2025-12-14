@@ -301,3 +301,42 @@ class StockSnapshot(models.Model):
     
     def __str__(self):
         return f"{self.user.name} - {self.stock} at {self.timestamp}"
+    
+class Signal(models.Model):
+    """
+    Trading signals for users
+    """
+    SIGNAL_TYPES = [
+        ('index_addition', 'Index Addition'),
+        ('index_removal', 'Index Removal'),
+        ('price_target', 'Price Target Hit'),
+        ('volume_spike', 'Volume Spike'),
+    ]
+    
+    ACTION_TYPES = [
+        ('buy', 'Buy'),
+        ('sell', 'Sell'),
+        ('hold', 'Hold'),
+        ('watch', 'Watch'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='signals')
+    stock = models.CharField(max_length=10, help_text="Stock ticker symbol")
+    signal_type = models.CharField(max_length=50, choices=SIGNAL_TYPES)
+    action = models.CharField(max_length=10, choices=ACTION_TYPES)
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    index_name = models.CharField(max_length=50, blank=True, null=True, help_text="NASDAQ 100, S&P 500, etc")
+    current_price = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    
+    class Meta:
+        db_table = 'trading_signal'
+        ordering = ['-created_at']
+        verbose_name = 'Signal'
+        verbose_name_plural = 'Signals'
+    
+    def __str__(self):
+        return f"{self.stock} - {self.title} ({self.action})"
