@@ -271,18 +271,38 @@ class HoldingViewSet(viewsets.ModelViewSet):
         
         for holding in holdings:
             try:
-                # Fetch current price from yfinance
+                print(f"Fetching price for {holding.stock}...")
                 stock = yf.Ticker(holding.stock)
-                info = stock.info
-                current_price = info.get('currentPrice') or info.get('regularMarketPrice')
+                
+                # Get live price using fast_info (works during market hours)
+                try:
+                    current_price = stock.fast_info.get('lastPrice')
+                    if not current_price or current_price == 0:
+                        # Fallback to info
+                        current_price = stock.info.get('currentPrice') or stock.info.get('regularMarketPrice')
+                    print(f"{holding.stock}: Live price = {current_price}")
+                except:
+                    # If live fails, use yesterday's close as fallback
+                    hist = stock.history(period='1d')
+                    if not hist.empty:
+                        current_price = float(hist['Close'].iloc[-1])
+                        print(f"{holding.stock}: Using history close = {current_price}")
+                    else:
+                        current_price = None
+                        print(f"{holding.stock}: No price available")
+                
+                print(f"{holding.stock}: current_price = {current_price}, old price = {holding.current_price}")
                 
                 if current_price:
                     holding.current_price = Decimal(str(current_price))
                     holding.save()
+                    print(f"Saved {holding.stock} with new price {holding.current_price}")
                     updated_count += 1
                 else:
+                    print(f"No price found for {holding.stock}")
                     errors.append(f"Could not fetch price for {holding.stock}")
             except Exception as e:
+                print(f"Error for {holding.stock}: {e}")
                 errors.append(f"Error updating {holding.stock}: {str(e)}")
         
         return Response({
@@ -361,12 +381,20 @@ class PortfolioViewSet(viewsets.ViewSet):
         total_profit_loss_percentage = safe_quantize(total_profit_loss_percentage)
         total_balance = safe_quantize(total_balance)
         
+        # Get realized P/L from user
+        try:
+            realized_profit_loss = Decimal(str(user.realized_profit_loss)) if user.realized_profit_loss is not None else Decimal('0.00')
+        except (ValueError, TypeError, AttributeError):
+            realized_profit_loss = Decimal('0.00')
+        realized_profit_loss = safe_quantize(realized_profit_loss)
+
         data = {
             'total_balance': total_balance,
             'total_invested': total_invested,
             'total_current_value': total_current_value,
             'total_profit_loss': total_profit_loss,
             'total_profit_loss_percentage': total_profit_loss_percentage,
+            'realized_profit_loss': realized_profit_loss,
             'holdings_count': holdings.count(),
             'transactions_count': transactions.count()
         }

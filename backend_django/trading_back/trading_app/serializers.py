@@ -302,5 +302,6 @@ class PortfolioSummarySerializer(serializers.Serializer):
     total_current_value = serializers.DecimalField(max_digits=15, decimal_places=2)
     total_profit_loss = serializers.DecimalField(max_digits=15, decimal_places=2)
     total_profit_loss_percentage = serializers.DecimalField(max_digits=5, decimal_places=2)
+    realized_profit_loss = serializers.DecimalField(max_digits=15, decimal_places=2)
     holdings_count = serializers.IntegerField()
     transactions_count = serializers.IntegerField()

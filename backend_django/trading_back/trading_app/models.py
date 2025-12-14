@@ -15,6 +15,12 @@ class User(AbstractUser):
         validators=[MinValueValidator(Decimal('0.00'))],
         help_text="User's account balance"
     )
+    realized_profit_loss = models.DecimalField( 
+        max_digits=15, 
+        decimal_places=2, 
+        default=0.00,
+        help_text="Total realized profit/loss from closed positions"
+    )
     name = models.CharField(max_length=100, help_text="User's full name")
     email = models.EmailField(unique=True, help_text="User's email address")
     userid = models.CharField(
