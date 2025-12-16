@@ -1,284 +1,612 @@
-# Trading Platform Frontend
+# Hermes Trading Platform
 
-React.js frontend dashboard for the Index Rebalancing Trading Platform.
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Django](https://img.shields.io/badge/django-4.2-green.svg)](https://www.djangoproject.com/)
+[![React](https://img.shields.io/badge/react-18-blue.svg)](https://reactjs.org/)
+[![Status](https://img.shields.io/badge/status-active-success.svg)]()
 
-Built with **Create React App**.
+## 📊 Overview
 
-## Features
+**Hermes Trading** is a full-stack trading simulation platform with **real-time market data integration**, portfolio management, **trading signals**, **AI-powered automated trading bots**, and ML-powered trading strategies. Built with Django REST Framework (backend) and React (frontend), Hermes provides a realistic trading experience with automatic price updates, comprehensive performance tracking, intelligent buy/sell signals, and fully automated trading bots powered by machine learning.
 
-- **User Authentication**: Login and registration with token-based authentication
-- **Dashboard**: Portfolio overview with key metrics and recent transactions
-- **Portfolio Management**: Detailed portfolio view with holdings and performance
-- **Transaction Management**: Create and track all financial transactions
-- **Holdings Management**: Manage stock holdings with real-time P/L tracking
-- **Hermes AI Trading Bot** **[NEW]**: Create and manage automated trading bots
-- **ML Trading Strategies**: 
+Named after the Greek god of commerce and trade, Hermes combines speed, intelligence, and strategic thinking to help you master the art of trading.
+
+---
+
+## ✨ Key Features
+
+### 🎯 Core Trading Functionality
+- **Real-Time Stock Prices** - Integration with Yahoo Finance API for live market data
+- **Automatic Price Updates** - Holdings refresh every 30 seconds with current market prices
+- **Interactive Price Charts** - Historical price visualization with multiple time periods (1D, 1W, 1M, 3M, 1Y, 5Y)
+- **Smart Buy/Sell Interface** - Auto-fetch current prices before trading
+- **Portfolio Management** - Track holdings, calculate P/L, monitor performance
+- **Realized P/L Tracking** - Track actual profits/losses from closed positions
+- **Hermes Branding** - Professional gold logo and interface design
+
+### 🤖 Hermes AI Trading Bot **[INTEGRATED - Dec 16, 2025]**
+- **Automated Trading Bots** - Create AI-powered trading bots with customizable risk profiles
+- **Multi-Strategy Integration** - Combines 4 ML strategies:
   - Pivot Point Analysis
   - Next-Day Price Prediction
-  - Stock Screener for Index Addition
-  - Index Rebalancing Strategy Analysis
-- **Performance Analytics**: Track portfolio performance with detailed metrics
-- **Trading Signals**: Receive and manage trading alerts
+  - Stock Screener
+  - Index Rebalancing Strategy
+- **Risk-Based Configuration** - THREE risk profiles:
+  - **LOW**: 2%/month return, conservative (blue chips)
+  - **MEDIUM**: 5%/month return, balanced (growth stocks)
+  - **HIGH**: 10%/month return, aggressive (high volatility)
+- **Automatic Position Management** - Stop loss, take profit, and position sizing based on risk level
+- **Performance Tracking** - Real-time ROI, win rate, and trade statistics
+- **Backtesting System** - Test bot strategies on historical data before live trading
+- **Bot Management Dashboard** - Create, monitor, pause, and manage multiple trading bots
 
-## Prerequisites
+### 🔔 Trading Signals **[ACTIVE]**
+- **Index Addition Alerts** - Get notified when stocks enter NASDAQ 100 or S&P 500
+- **Action Recommendations** - Buy, Sell, Watch, or Hold signals
+- **Unread Badge Notifications** - Visual alerts in navigation menu with count
+- **Signal Filtering** - Filter by All, Unread, Buy, Sell, Watch
+- **Quick Trade Actions** - Buy directly from signal cards
+- **Signal Management** - Mark as read or dismiss signals
+- **Auto-Refresh** - Signal count updates every 60 seconds
 
-- Node.js 16+ and npm/yarn
-- Django backend running on `http://localhost:8000`
+### 📈 Performance Tracking
+- **Historical Performance Charts** - Track portfolio value from purchase date forward
+- **Individual Stock Analysis** - View performance of specific stocks
+- **Automatic Snapshots** - System saves portfolio state every 30 seconds
+- **Multiple Time Periods** - Analyze performance across different timeframes (1D to 5Y)
+- **Best/Worst Performers** - Identify top and bottom performing stocks
+- **Unrealized vs Realized P/L** - Separate tracking for open and closed positions
 
-## Installation
+### 🧠 ML Trading Strategies
+- **Pivot Point Analysis** - Technical analysis for support/resistance levels
+- **Next-Day Price Prediction** - ML-based price movement forecasting
+- **Stock Screener** - Analyze stocks for index addition eligibility
+- **Index Rebalancing Analysis** - Track index reconstitution events
 
-1. **Navigate to frontend directory**
-   ```bash
-   cd frontend_react
-   ```
+### 👤 User Management
+- **Custom User Authentication** - Token-based secure authentication
+- **Account Balance Tracking** - Real-time balance updates
+- **Transaction History** - Complete audit trail of all activities
+- **Profile Management** - Update user information and preferences
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
+---
 
-3. **Start development server**
-   ```bash
-   npm start
-   # or
-   yarn start
-   ```
+## 🚀 Quick Start
 
-4. **Open browser**
-   The app will automatically open at `http://localhost:3000`
+### Prerequisites
+- **Python 3.8+**
+- **Node.js 16+**
+- **npm or yarn**
+- **Git**
 
-## Project Structure
+### Installation
+
+#### 1️⃣ Clone the Repository
+```bash
+git clone https://github.com/leanardiles/Trading_App_Leandro.git
+cd Trading_App_Leandro
+```
+
+#### 2️⃣ Backend Setup (Django)
+
+```bash
+# Create and activate virtual environment
+python -m venv venv
+
+# On Windows (Git Bash):
+source venv/Scripts/activate
+
+# On macOS/Linux:
+source venv/bin/activate
+
+# Navigate to Django project
+cd backend_django/trading_back
+
+# Install dependencies
+pip install -r ../requirements.txt
+
+# Run migrations
+python manage.py makemigrations
+python manage.py migrate
+
+# Create superuser (optional)
+python manage.py createsuperuser
+
+# Start development server
+python manage.py runserver
+```
+
+Backend will run at: **http://127.0.0.1:8000/**
+
+#### 3️⃣ Frontend Setup (React)
+
+Open a **new terminal**:
+
+```bash
+cd frontend_react
+
+# Install dependencies
+npm install
+
+# Start development server
+npm start
+```
+
+Frontend will open at: **http://localhost:3000/**
+
+---
+
+## 🧪 Testing Features
+
+### Create Test Signals
+
+```bash
+cd backend_django/trading_back
+source ../../venv/Scripts/activate
+python manage.py shell
+```
+
+Then:
+```python
+from trading_app.models import User, Signal
+from decimal import Decimal
+
+user = User.objects.get(email='test@example.com')
+
+Signal.objects.create(
+    user=user,
+    stock='TSLA',
+    signal_type='index_addition',
+    action='buy',
+    title='TSLA Added to NASDAQ 100',
+    description='Tesla has been added to the NASDAQ 100 index.',
+    index_name='NASDAQ 100',
+    current_price=Decimal('250.00'),
+    is_read=False,
+    is_active=True
+)
+
+print("✅ Test signal created!")
+quit()
+```
+
+### Run Hermes Bot Backtest
+
+```bash
+cd backend_django/trading_back
+source ../../venv/Scripts/activate
+python manage.py backtest_hermes --risk-level MEDIUM --investment 1000
+```
+
+**Backtest Options:**
+- `--bot-id <id>` - Backtest existing bot
+- `--risk-level <LOW|MEDIUM|HIGH>` - Risk profile
+- `--investment <amount>` - Investment amount in dollars
+- `--start-date <YYYY-MM-DD>` - Backtest start date
+- `--end-date <YYYY-MM-DD>` - Backtest end date
+
+---
+
+## 🔌 API Endpoints
+
+### Base URL
+```
+http://localhost:8000/api/
+```
+
+### Authentication
+All protected endpoints require token authentication:
+```
+Authorization: Token <your_token_here>
+```
+
+### User Endpoints
+- `POST /api/users/register/` - User registration
+- `POST /api/users/login/` - User login (returns token)
+- `POST /api/users/logout/` - User logout
+- `GET /api/users/profile/` - Get user profile
+- `PUT/PATCH /api/users/update_profile/` - Update profile
+
+### Hermes Bot Endpoints
+- `POST /api/herm/create/` - Create new trading bot
+- `GET /api/herm/list/` - List all user's bots
+- `GET /api/herm/<bot_id>/status/` - Get bot performance and status
+
+### Trading Endpoints
+- `POST /api/trading/buy/` - Buy stock
+- `POST /api/trading/sell/` - Sell stock (tracks realized P/L)
+- `POST /api/trading/get_stock_price/` - Fetch real-time stock price with historical data
+
+### Holdings Endpoints
+- `GET /api/holdings/` - List all holdings
+- `POST /api/holdings/refresh_prices/` - Refresh current prices for all holdings
+- `GET /api/holdings/summary/` - Holdings summary
+
+### Portfolio Endpoints
+- `GET /api/portfolio/summary/` - Complete portfolio overview (includes realized P/L)
+- `GET /api/portfolio/performance/` - Performance metrics
+
+### Signal Endpoints
+- `GET /api/signals/` - List all signals
+- `GET /api/signals/active/` - Get only active signals
+- `GET /api/signals/unread_count/` - Get count of unread signals
+- `POST /api/signals/{id}/mark_read/` - Mark signal as read
+- `POST /api/signals/{id}/dismiss/` - Dismiss/deactivate signal
+
+### Performance Tracking Endpoints
+- `POST /api/portfolio-snapshots/save_snapshot/` - Save current portfolio snapshot
+- `GET /api/portfolio-snapshots/portfolio_history/?period=1M` - Get portfolio performance history
+- `GET /api/portfolio-snapshots/stock_history/?stock=AAPL&period=1M` - Get individual stock history
+
+### ML Strategy Endpoints
+- `POST /api/ml/pivot/` - Pivot point analysis
+- `POST /api/ml/predict/` - Next-day price prediction
+- `POST /api/ml/screener/` - Stock screener analysis
+- `POST /api/ml/index-event/` - Index rebalancing analysis
+
+---
+
+## 💡 How to Use
+
+### 1. Register & Login
+- Navigate to **http://localhost:3000**
+- Click "Register" to create an account
+- Login with your credentials
+- You'll receive a starting balance for trading
+
+### 2. Make a Deposit
+- Go to **Transactions** page
+- Click "Add Transaction"
+- Select "Deposit" and enter amount
+- Your balance will be updated
+
+### 3. Buy Stocks (Manual Trading)
+- Go to **Trading** page
+- Enter stock symbol (e.g., "AAPL", "GOOGL", "TSLA")
+- Click **"Get Current Price"** to fetch real-time market price
+- View historical price chart
+- Enter quantity of shares
+- Review total cost
+- Click "Buy Stock"
+
+### 4. Create AI Trading Bot
+- Go to **Hermes Agent** page
+- Enter investment amount (minimum $100)
+- Select duration (weeks)
+- Choose risk level:
+  - **LOW**: Conservative, 2%/month target
+  - **MEDIUM**: Balanced, 5%/month target
+  - **HIGH**: Aggressive, 10%/month target
+- Click "Create Herm_trades Bot"
+- Bot will execute trades using ML strategies
+
+### 5. Monitor Performance
+- **Dashboard** - See 4 key metrics:
+  - Total Balance (cash available)
+  - Current Value (holdings value)
+  - Unrealized P/L (open positions)
+  - Realized P/L (profits from closed trades)
+- **Holdings** page - View all your stocks (auto-refreshes every 30s)
+- **Performance** page - Interactive charts showing portfolio history
+- **Hermes Agent** page - Monitor bot performance, ROI, win rate
+
+### 6. Trading Signals
+- Check **Signals** menu for red badge (unread count)
+- View signals: Index additions, buy/sell recommendations
+- Filter by: All, Unread, Buy, Sell, Watch
+- Click **"Buy Now"** to trade directly from signals
+- Mark as read or dismiss signals
+
+### 7. Sell Stocks
+- Go to **Trading** → **Sell** tab
+- Select stock from your holdings
+- System shows current price
+- Enter quantity to sell
+- Realized P/L is calculated and added to your total
+
+---
+
+## 🤖 Hermes Bot Risk Profiles
+
+### LOW Risk (Conservative)
+- **Expected Return**: 2% per month
+- **Stop Loss**: 5%
+- **Take Profit**: 10%
+- **Max Position**: 20% of capital
+- **Stocks**: Large-cap blue chips (AAPL, MSFT, GOOGL, AMZN, TSLA, META, NVDA, JPM, V, JNJ)
+- **Best For**: Conservative investors seeking steady growth
+
+### MEDIUM Risk (Balanced)
+- **Expected Return**: 5% per month
+- **Stop Loss**: 8%
+- **Take Profit**: 15%
+- **Max Position**: 30% of capital
+- **Stocks**: Growth stocks (AAPL, MSFT, GOOGL, AMZN, TSLA, META, NVDA, AMD, NFLX, DIS)
+- **Best For**: Balanced investors seeking moderate returns
+
+### HIGH Risk (Aggressive)
+- **Expected Return**: 10% per month
+- **Stop Loss**: 15%
+- **Take Profit**: 25%
+- **Max Position**: 40% of capital
+- **Stocks**: High volatility stocks (TSLA, NVDA, AMD, META, NFLX, PLTR, RIVN, LCID, SOFI, HOOD)
+- **Best For**: Aggressive traders comfortable with higher risk
+
+---
+
+## 🗂️ Project Structure
 
 ```
-frontend_react/
-├── public/
-│   └── index.html          # HTML template
-├── src/
-│   ├── components/          # Reusable components
-│   │   └── Layout.jsx       # Main layout with navigation
-│   ├── contexts/            # React contexts
-│   │   └── AuthContext.jsx  # Authentication context
-│   ├── pages/               # Page components
-│   │   ├── Dashboard.jsx    # Portfolio overview
-│   │   ├── Portfolio.jsx    # Detailed portfolio
-│   │   ├── Transactions.jsx # Transaction history
-│   │   ├── Holdings.jsx     # Stock holdings
-│   │   ├── Trading.jsx      # Buy/sell stocks
-│   │   ├── MLStrategies.jsx # ML strategy tools
-│   │   ├── Performance.jsx  # Performance charts
-│   │   ├── HermesAgent.jsx  # AI trading bot [NEW]
-│   │   ├── Signals.jsx      # Trading signals
-│   │   ├── Profile.jsx      # User profile
-│   │   ├── Login.jsx        # Login page
-│   │   └── Register.jsx     # Registration page
-│   ├── services/            # API services
-│   │   └── api.js           # Axios API client
-│   ├── utils/               # Utility functions
-│   │   └── format.js        # Formatting helpers
-│   ├── App.jsx              # Main app component
-│   ├── index.js             # Entry point
-│   ├── index.css            # Global styles
-│   └── setupProxy.js        # API proxy configuration
-├── package.json
+Hermes_Trading/
+├── backend_django/
+│   └── trading_back/
+│       ├── trading_app/
+│       │   ├── models.py              # Database models
+│       │   ├── views.py               # API endpoints
+│       │   ├── serializers.py         # Data serialization
+│       │   ├── urls.py                # API routing
+│       │   ├── herm_trades.py         # Hermes bot API
+│       │   ├── auto_trading_engine.py # Trading engine
+│       │   ├── backtest_hermes_bot.py # Backtesting system
+│       │   ├── ml_models/             # ML strategies
+│       │   │   ├── pivot.py
+│       │   │   ├── nextday_prediction.py
+│       │   │   ├── stock_screener.py
+│       │   │   └── index_rebalancing.py
+│       │   └── management/commands/
+│       │       └── backtest_hermes.py # Backtest CLI
+│       ├── manage.py
+│       └── db.sqlite3
+├── frontend_react/
+│   ├── public/
+│   │   └── hermes_logo.png           # Hermes branding
+│   ├── src/
+│   │   ├── components/
+│   │   │   └── Layout.jsx            # Main layout with logo & badges
+│   │   ├── pages/
+│   │   │   ├── Dashboard.jsx         # Portfolio overview
+│   │   │   ├── Trading.jsx           # Manual trading
+│   │   │   ├── HermesAgent.jsx       # Bot management
+│   │   │   ├── Signals.jsx           # Trading signals
+│   │   │   ├── Holdings.jsx          # Current positions
+│   │   │   └── Performance.jsx       # Performance charts
+│   │   └── services/
+│   │       └── api.js                # API client
+│   └── package.json
+├── venv/                              # Python virtual environment
+├── .gitignore
 └── README.md
 ```
 
-## Configuration
+---
 
-The frontend is configured to proxy API requests to the Django backend at `http://localhost:8000`. This is configured in `src/setupProxy.js`.
+## 📚 Database Models
 
-If you need to change the backend URL, update:
-- `src/setupProxy.js` - proxy target
-- `src/services/api.js` - `API_BASE_URL`
+### User Model
+- Custom user with email authentication
+- Fields: balance, realized_profit_loss, name, email, userid
 
-## Available Scripts
+### Transaction Model
+- Types: deposit, withdrawal, buy, sell, dividend, fee
+- Tracks all financial activities with timestamps
 
-- `npm start` - Start development server (opens on port 3000)
-- `npm run build` - Build for production (creates `build/` folder)
-- `npm test` - Run tests
-- `npm run eject` - Eject from Create React App (irreversible)
+### Holding Model
+- Tracks current stock positions
+- Auto-calculates P/L, percentages, current value
 
-## Features in Detail
+### Signal Model
+- Trading signals with action recommendations
+- Types: index_addition, index_removal, price_target, volume_spike
+- Status: is_read, is_active
 
-### Authentication
-- Secure token-based authentication
-- Automatic token refresh
-- Protected routes
-- Session persistence
+### AutoTradingBot Model
+- Tracks automated trading bots
+- Fields:
+  - Configuration: risk_level, duration, initial_capital
+  - Performance: current_capital, total_profit_loss, roi_percentage
+  - Statistics: total_trades, winning_trades, losing_trades, win_rate
+  - Status: ACTIVE, PAUSED, STOPPED, COMPLETED
+  - ML flags: use_pivot, use_prediction, use_screener, use_index_rebalancing
 
-### Dashboard
-- Real-time portfolio metrics:
-  - Total Balance (cash)
-  - Current Value (holdings)
-  - Unrealized P/L (open positions)
-  - Realized P/L (closed positions)
-- Recent transactions display
-- Quick stats overview
+### PortfolioSnapshot & StockSnapshot Models
+- Historical performance tracking
+- Automatic snapshots every 30 seconds
 
-### Hermes AI Trading Bot **[NEW]**
-- **Create Bot Tab**:
-  - Investment amount input
-  - Risk level selector (LOW/MEDIUM/HIGH)
-  - Duration in weeks
-  - Risk profile information panel
-- **My Bots Tab**:
-  - List of all created bots
-  - Performance metrics (ROI, win rate, P/L)
-  - Status indicators (ACTIVE, PAUSED, STOPPED)
-  - Trade statistics
-- Real-time bot performance tracking
-- Color-coded status and risk indicators
+---
 
-### Trading
-- Buy/Sell interface with real-time price fetching
-- Interactive price charts (1D, 1W, 1M, 3M, 1Y, 5Y)
-- Historical price visualization
-- Automatic price updates
+## 📊 Recent Updates
 
-### ML Strategies
-1. **Pivot Point Analysis**: Calculate pivot points and generate trading signals
-2. **Next-Day Prediction**: ML-based price movement prediction
-3. **Stock Screener**: Screen stocks for index addition eligibility
-4. **Index Rebalancing**: Analyze index reconstitution events with trading recommendations
+### December 16, 2025 - FINAL:
+✅ **Complete Hermes Rebranding**
+- Professional gold logo (Hermes silhouette)
+- "Hermes Trading" throughout platform
+- Updated navigation with proper icons
 
-### Portfolio & Performance
-- Detailed holdings breakdown
-- Profit/loss tracking (realized and unrealized)
-- Performance rankings
-- Best/worst performers
-- Historical performance charts
-- Individual stock analysis
+✅ **Hermes AI Trading Bot - Fully Integrated**
+- Database migrations completed
+- Bot API endpoints working
+- Hermes Agent page operational
+- Three risk profiles (LOW/MEDIUM/HIGH)
+- Backtesting system functional
 
-### Trading Signals
-- Index addition/removal alerts
-- Buy/Sell/Hold/Watch recommendations
-- Filter by type (All, Unread, Buy, Sell, Watch)
-- Quick action buttons
-- Unread badge notifications
+✅ **Trading Signals - Live**
+- Signal badge notifications working
+- Auto-refresh every 60 seconds
+- Signals page with filtering
+- Mark as read / Dismiss functionality
 
-## API Integration
+✅ **Realized P/L Tracking - Complete**
+- Automatic calculation on stock sales
+- Dashboard shows all 4 metrics
+- Persistent tracking across sessions
 
-All API calls are handled through the `api.js` service file. The service includes:
-- Automatic token injection
-- Error handling
-- Request/response interceptors
-- API methods for:
-  - Authentication (`authAPI`)
-  - Users (`userAPI`)
-  - Transactions (`transactionAPI`)
-  - Holdings (`holdingAPI`)
-  - Portfolio (`portfolioAPI`)
-  - Trading (`tradingAPI`)
-  - ML Strategies (`mlAPI`)
-  - Signals (`signalAPI`)
-  - Hermes Bot (`hermAPI`) **[NEW]**
+✅ **Documentation Updated**
+- README with all features
+- Integration guides
+- API documentation
+- Testing instructions
 
-## Technologies Used
+---
 
+## 🛣️ Roadmap
+
+### Completed ✅
+- [x] Real-time stock prices
+- [x] Performance tracking
+- [x] Trading signals
+- [x] Realized P/L tracking
+- [x] AI trading bot system
+- [x] Backtesting framework
+- [x] Hermes branding
+- [x] Signal notifications
+
+### In Progress 🚧
+- [ ] Real-time bot execution (currently backtest only)
+- [ ] Bot performance charts
+- [ ] Dashboard mini performance chart
+
+### Planned 📋
+- [ ] Email notifications for bot events
+- [ ] Paper trading mode
+- [ ] Advanced charting with technical indicators
+- [ ] Mobile app (React Native)
+- [ ] Social trading features
+- [ ] Options trading simulation
+- [ ] Multi-currency support
+- [ ] Fractional shares
+- [ ] Watchlist functionality
+
+---
+
+## 🔧 Configuration
+
+### Environment Variables
+For production deployment, configure:
+- `DEBUG=False`
+- `SECRET_KEY` (generate a new secure key)
+- `ALLOWED_HOSTS` (add your domain)
+- Database configuration (PostgreSQL recommended)
+
+### CORS Settings
+Backend accepts requests from `http://localhost:3000` by default.
+
+To modify, edit `backend_django/trading_back/trading_back/settings.py`:
+```python
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://your-domain.com",
+]
+```
+
+---
+
+## 🧪 Testing
+
+### Backend Tests
+```bash
+cd backend_django/trading_back
+python manage.py test
+```
+
+### Run Backtest
+```bash
+python manage.py backtest_hermes --risk-level MEDIUM --investment 1000
+```
+
+### Create Test Data
+Use Django shell to create test signals, bots, or transactions for testing.
+
+---
+
+## 🛠️ Technologies
+
+### Backend:
+- **Django 4.2** - Web framework
+- **Django REST Framework 3.14** - API framework
+- **yfinance** - Real-time stock data
+- **pandas** - Data analysis
+- **numpy** - Numerical computing
+- **scikit-learn** - Machine learning
+- **xgboost** - ML gradient boosting
+- **SQLite** - Database (development)
+
+### Frontend:
 - **React 18** - UI library
-- **Create React App** - Build tool and dev server
 - **Material-UI (MUI)** - Component library
+- **Recharts** - Charting library
 - **React Router** - Routing
 - **Axios** - HTTP client
-- **Recharts** - Chart library
 - **React Toastify** - Notifications
-- **http-proxy-middleware** - API proxy for development
 
-## Hermes Bot Usage
+---
 
-### Creating a Bot
-1. Navigate to "Hermes Agent" tab
-2. Fill in investment amount (minimum $100)
-3. Select risk level (LOW, MEDIUM, or HIGH)
-4. Set duration in weeks
-5. Click "Create Hermes_trades Bot"
+## 🤝 Contributing
 
-### Viewing Bot Performance
-1. Go to "My Bots" tab
-2. View all created bots with:
-   - Current value vs initial investment
-   - Profit/Loss and ROI
-   - Total trades and win rate
-   - Status (ACTIVE, PAUSED, STOPPED, COMPLETED)
+We welcome contributions! Here's how:
 
-### Risk Profiles
-- **LOW**: 2% monthly return, conservative stocks
-- **MEDIUM**: 5% monthly return, balanced approach
-- **HIGH**: 10% monthly return, aggressive growth stocks
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Commit with clear messages (`git commit -m 'Add amazing feature'`)
+5. Push to your branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
 
-## Troubleshooting
+### Development Guidelines:
+- Follow PEP 8 style guide for Python code
+- Use ESLint configuration for JavaScript/React code
+- Write tests for new features
+- Update documentation for API changes
+- Keep commits atomic and well-described
 
-### CORS Errors
-Make sure the Django backend has CORS configured correctly in `settings.py`:
-- `corsheaders` middleware is enabled
-- `CORS_ALLOWED_ORIGINS` includes `http://localhost:3000`
+---
 
-### Authentication Issues
-- Check that the backend is running
-- Verify token is being stored in localStorage
-- Check browser console for API errors
-- Clear localStorage and login again
+## 📄 License
 
-### Build Errors
-- Clear `node_modules` and reinstall: `rm -rf node_modules && npm install`
-- Check Node.js version: `node --version` (should be 16+)
-- Delete `package-lock.json` and reinstall if dependency conflicts occur
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-### Port Already in Use
-If port 3000 is already in use:
+---
+
+## 🆘 Support & Documentation
+
+### Resources:
+- **GitHub Issues**: [Create an issue](https://github.com/leanardiles/Trading_App_Leandro/issues)
+- **API Documentation**: Check `/api/` endpoint when server is running
+- **Django Documentation**: https://docs.djangoproject.com/
+- **React Documentation**: https://reactjs.org/
+
+### Common Issues:
+
+**Port already in use?**
 ```bash
-# Set PORT environment variable
+# Backend
+python manage.py runserver 8001
+
+# Frontend
 PORT=3001 npm start
 ```
 
-### API Connection Errors
-- Verify backend is running on `http://localhost:8000`
-- Check `src/setupProxy.js` exists
-- Verify API endpoints in `src/services/api.js`
+**CORS errors?**
+- Verify `django-cors-headers` is installed
+- Check `CORS_ALLOWED_ORIGINS` in settings.py
 
-## Production Build
-
-To create a production build:
-
+**Database errors?**
 ```bash
-npm run build
+# Reset database
+rm db.sqlite3
+python manage.py migrate
 ```
 
-The build output will be in the `build/` directory. You can serve it with:
-- Any static file server (nginx, Apache)
-- Integrate with Django backend
-- Deploy to platforms like Vercel, Netlify, etc.
+---
 
-## Development Notes
+## 🙏 Acknowledgments
 
-- The app uses Create React App's proxy feature to avoid CORS issues during development
-- Hot reload is enabled by default
-- All environment variables should start with `REACT_APP_` prefix
-- Material-UI theme is customized in `src/theme.js`
+- Yahoo Finance for providing free stock market data via yfinance
+- Material-UI for the beautiful React components
+- Recharts for the interactive charting library
+- Django and React communities for excellent documentation
+- Greek mythology for the inspiration (Hermes, god of commerce and trade)
 
-## Recent Updates
+---
 
-**December 2025:**
-- ✅ Hermes AI Trading Bot interface
-- ✅ Bot creation and management dashboard
-- ✅ Real-time bot performance tracking
-- ✅ Risk profile visualization
-- ✅ Trading signals page
-- ✅ Enhanced navigation with Hermes Agent tab
-- ✅ Improved dashboard metrics
-- ✅ Real-time price charts
-
-## Contributing
-
-1. Follow the existing code structure
-2. Use Material-UI components for consistency
-3. Implement proper error handling
-4. Add loading states for async operations
-5. Follow React best practices
-6. Use the existing API service patterns
-
-## License
-
-Same as the main project.
+*Disclaimer: This is a simulation platform for educational purposes. Not financial advice. Always consult with a licensed financial advisor before making real investment decisions.*
