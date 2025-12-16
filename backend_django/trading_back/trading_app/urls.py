@@ -23,3 +23,11 @@ from django.urls import path, include as url_include
 urlpatterns += [
     path('ml/', url_include('trading_app.ml_urls')),
 ]
+
+# Hermes Trading Bot endpoints
+from . import herm_trades
+urlpatterns += [
+    path('herm/create/', herm_trades.create_herm_bot, name='create_herm_bot'),
+    path('herm/<int:bot_id>/status/', herm_trades.get_herm_bot_status, name='herm_bot_status'),
+    path('herm/list/', herm_trades.list_herm_bots, name='list_herm_bots'),
+]

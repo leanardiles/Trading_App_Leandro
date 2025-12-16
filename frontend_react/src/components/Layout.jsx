@@ -28,6 +28,7 @@ import {
   Logout,
   Person,
   ShoppingCart,
+  AutoAwesome,
 } from '@mui/icons-material'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -41,6 +42,7 @@ const menuItems = [
   { text: 'Holdings', icon: <TrendingUp />, path: '/holdings' },
   { text: 'ML Strategies', icon: <Psychology />, path: '/ml-strategies' },
   { text: 'Performance', icon: <Assessment />, path: '/performance' },
+  { text: 'Hermes Agent', icon: <AutoAwesome />, path: '/hermes-agent' },
 ]
 
 export default function Layout({ children }) {

@@ -340,3 +340,139 @@ class Signal(models.Model):
     
     def __str__(self):
         return f"{self.stock} - {self.title} ({self.action})"
+
+
+class AutoTradingBot(models.Model):
+    """
+    Model to track automated trading bots
+    """
+    STATUS_CHOICES = [
+        ('ACTIVE', 'Active'),
+        ('PAUSED', 'Paused'),
+        ('STOPPED', 'Stopped'),
+        ('COMPLETED', 'Completed'),
+    ]
+    
+    RISK_LEVEL_CHOICES = [
+        ('LOW', 'Low'),
+        ('MEDIUM', 'Medium'),
+        ('HIGH', 'High'),
+    ]
+    
+    DURATION_CHOICES = [
+        ('SHORT', 'Short (1 week)'),
+        ('MEDIUM', 'Medium (1 month)'),
+        ('LONG', 'Long (3 months)'),
+        ('CUSTOM', 'Custom'),
+    ]
+    
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='trading_bots',
+        help_text="User who owns this bot"
+    )
+    name = models.CharField(
+        max_length=100,
+        help_text="Bot name"
+    )
+    risk_level = models.CharField(
+        max_length=10,
+        choices=RISK_LEVEL_CHOICES,
+        help_text="Risk level: LOW, MEDIUM, HIGH"
+    )
+    duration = models.CharField(
+        max_length=10,
+        choices=DURATION_CHOICES,
+        default='MEDIUM',
+        help_text="Trading duration"
+    )
+    initial_capital = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        help_text="Initial investment amount"
+    )
+    current_capital = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        default=0.00,
+        help_text="Current capital value"
+    )
+    expected_return = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        help_text="Expected return percentage"
+    )
+    total_profit_loss = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        default=0.00,
+        help_text="Total profit/loss"
+    )
+    total_trades = models.PositiveIntegerField(
+        default=0,
+        help_text="Total number of trades executed"
+    )
+    winning_trades = models.PositiveIntegerField(
+        default=0,
+        help_text="Number of winning trades"
+    )
+    losing_trades = models.PositiveIntegerField(
+        default=0,
+        help_text="Number of losing trades"
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default='ACTIVE',
+        help_text="Bot status"
+    )
+    use_pivot = models.BooleanField(
+        default=True,
+        help_text="Use pivot point analysis"
+    )
+    use_prediction = models.BooleanField(
+        default=True,
+        help_text="Use next-day prediction"
+    )
+    use_screener = models.BooleanField(
+        default=True,
+        help_text="Use stock screener"
+    )
+    use_index_rebalancing = models.BooleanField(
+        default=True,
+        help_text="Use index rebalancing strategy"
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="When bot was created"
+    )
+    last_trade_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Last trade timestamp"
+    )
+    
+    class Meta:
+        db_table = 'auto_trading_bot'
+        verbose_name = 'Auto Trading Bot'
+        verbose_name_plural = 'Auto Trading Bots'
+        ordering = ['-created_at']
+    
+    @property
+    def roi_percentage(self):
+        """Calculate ROI percentage"""
+        if self.initial_capital > 0:
+            return (self.total_profit_loss / self.initial_capital) * 100
+        return 0
+    
+    @property
+    def win_rate(self):
+        """Calculate win rate percentage"""
+        if self.total_trades > 0:
+            return (self.winning_trades / self.total_trades) * 100
+        return 0
+    
+    def __str__(self):
+        return f"{self.name} - {self.user.name} ({self.status})"

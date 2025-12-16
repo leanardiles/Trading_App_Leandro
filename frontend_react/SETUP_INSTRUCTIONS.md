@@ -89,3 +89,13 @@ npm run build
 
 This creates an optimized production build in the `build/` folder.
 
+## New Features
+
+**Hermes AI Trading Bot** (December 2025):
+- Create automated trading bots from the "Hermes Agent" tab
+- Manage multiple bots with different risk profiles
+- View real-time performance metrics
+- See detailed trade statistics and ROI
+
+For more information, see the main [README.md](README.md).
+

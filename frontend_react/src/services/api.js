@@ -126,5 +126,12 @@ export const mlAPI = {
   indexRebalancing: (data) => api.post('/ml/index-event/', data),
 }
 
+// Hermes Trading Bot API
+export const hermAPI = {
+  createBot: (data) => api.post('/herm/create/', data),
+  getBotStatus: (botId) => api.get(`/herm/${botId}/status/`),
+  listBots: () => api.get('/herm/list/'),
+}
+
 export default api
 

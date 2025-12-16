@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import User, Transaction, Holding, Signal
+from .models import User, Transaction, Holding, Signal, AutoTradingBot
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -318,3 +318,25 @@ class SignalSerializer(serializers.ModelSerializer):
             'created_at', 'is_read', 'is_active'
         ]
         read_only_fields = ['id', 'created_at']
+
+
+class AutoTradingBotSerializer(serializers.ModelSerializer):
+    """
+    Serializer for AutoTradingBot model
+    """
+    roi_percentage = serializers.ReadOnlyField()
+    win_rate = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = AutoTradingBot
+        fields = [
+            'id', 'user', 'name', 'risk_level', 'duration',
+            'initial_capital', 'current_capital', 'expected_return',
+            'total_profit_loss', 'total_trades', 'winning_trades',
+            'losing_trades', 'status', 'use_pivot', 'use_prediction',
+            'use_screener', 'use_index_rebalancing', 'created_at',
+            'last_trade_at', 'roi_percentage', 'win_rate'
+        ]
+        read_only_fields = [
+            'id', 'created_at', 'last_trade_at', 'roi_percentage', 'win_rate'
+        ]

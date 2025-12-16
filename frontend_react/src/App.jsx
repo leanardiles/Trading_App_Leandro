@@ -14,6 +14,7 @@ import Holdings from './pages/Holdings'
 import Trading from './pages/Trading'
 import MLStrategies from './pages/MLStrategies'
 import Performance from './pages/Performance'
+import HermesAgent from './pages/HermesAgent'
 import Profile from './pages/Profile'
 
 function PrivateRoute({ children }) {
@@ -121,6 +122,16 @@ function AppRoutes() {
           <PrivateRoute>
             <Layout>
               <Performance />
+            </Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/hermes-agent"
+        element={
+          <PrivateRoute>
+            <Layout>
+              <HermesAgent />
             </Layout>
           </PrivateRoute>
         }
