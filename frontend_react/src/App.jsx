@@ -14,6 +14,7 @@ import Holdings from './pages/Holdings'
 import Trading from './pages/Trading'
 import MLStrategies from './pages/MLStrategies'
 import Performance from './pages/Performance'
+import Signals from './pages/Signals'
 import HermesAgent from './pages/HermesAgent'
 import Profile from './pages/Profile'
 
@@ -122,6 +123,16 @@ function AppRoutes() {
           <PrivateRoute>
             <Layout>
               <Performance />
+            </Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/signals"
+        element={
+          <PrivateRoute>
+            <Layout>
+              <Signals />
             </Layout>
           </PrivateRoute>
         }
