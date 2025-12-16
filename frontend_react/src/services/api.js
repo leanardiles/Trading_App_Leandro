@@ -126,6 +126,16 @@ export const mlAPI = {
   indexRebalancing: (data) => api.post('/ml/index-event/', data),
 }
 
+// Signal API
+export const signalAPI = {
+  list: () => api.get('/signals/'),
+  active: () => api.get('/signals/active/'),
+  unreadCount: () => api.get('/signals/unread_count/'),
+  markRead: (id) => api.post(`/signals/${id}/mark_read/`),
+  dismiss: (id) => api.post(`/signals/${id}/dismiss/`),
+}
+
+
 // Hermes Trading Bot API
 export const hermAPI = {
   createBot: (data) => api.post('/herm/create/', data),
